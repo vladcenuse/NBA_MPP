@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import nba_api.stats.static.players as nbaP
+
 app = FastAPI()
 
 # ✅ Add CORS Middleware
@@ -16,4 +18,8 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, NBA Fantasy!"}
+    listNBa = nbaP.get_active_players()
+    
+
+    return {"NBA": listNBa}
+
