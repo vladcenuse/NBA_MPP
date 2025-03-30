@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playercareerstats, commonplayerinfo
+from pydantic import BaseModel
+from typing import Optional, Dict, List
 import logging
 import time
 
@@ -253,4 +255,96 @@ async def get_player_stats_endpoint(player_id: int):
 @app.get("/test")
 async def test():
     return {"message": "Backend is working"}
+
+# Add these new models for court players
+class CourtPosition(BaseModel):
+    position: str
+    player_id: int
+
+class CourtUpdate(BaseModel):
+    position: str
+    player: Optional[Dict] = None
+
+# Track players on the court
+COURT_PLAYERS = {
+    "PG": None,
+    "SG": None,
+    "SF": None,
+    "PF": None,
+    "C": None
+}
+
+# Add these new endpoints
+@app.get("/court")
+async def get_court_players():
+    """Get all players currently on the court"""
+    court_with_details = {}
+    
+    for position, player_id in COURT_PLAYERS.items():
+        if player_id is not None:
+            # Find player details
+            player = next((p for p in PLAYERS_WITH_STATS if p['id'] == player_id), None)
+            court_with_details[position] = player
+        else:
+            court_with_details[position] = None
+            
+    return court_with_details
+
+@app.post("/court/add")
+async def add_player_to_court(data: CourtPosition):
+    """Add a player to a position on the court"""
+    position = data.position
+    player_id = data.player_id
+    
+    if position not in COURT_PLAYERS:
+        raise HTTPException(status_code=400, detail=f"Invalid position: {position}")
+    
+    # Find player in our data
+    player = next((p for p in PLAYERS_WITH_STATS if p['id'] == player_id), None)
+    if not player:
+        raise HTTPException(status_code=404, detail=f"Player with ID {player_id} not found")
+    
+    # Add player to the court
+    COURT_PLAYERS[position] = player_id
+    
+    logger.info(f"Added player {player['full_name']} to position {position}")
+    return {"position": position, "player": player}
+
+@app.delete("/court/{position}")
+async def remove_player_from_court(position: str):
+    """Remove a player from a position on the court"""
+    if position not in COURT_PLAYERS:
+        raise HTTPException(status_code=400, detail=f"Invalid position: {position}")
+    
+    if COURT_PLAYERS[position] is None:
+        return {"message": f"No player at position {position}"}
+    
+    # Get player details before removing
+    player_id = COURT_PLAYERS[position]
+    player = next((p for p in PLAYERS_WITH_STATS if p['id'] == player_id), None)
+    
+    # Remove player from the court
+    COURT_PLAYERS[position] = None
+    
+    logger.info(f"Removed player from position {position}")
+    return {"position": position, "player": player}
+
+@app.put("/court/{position}")
+async def update_player_on_court(position: str, data: CourtPosition):
+    """Update/replace a player at a position on the court"""
+    if position not in COURT_PLAYERS:
+        raise HTTPException(status_code=400, detail=f"Invalid position: {position}")
+    
+    player_id = data.player_id
+    
+    # Find player in our data
+    player = next((p for p in PLAYERS_WITH_STATS if p['id'] == player_id), None)
+    if not player:
+        raise HTTPException(status_code=404, detail=f"Player with ID {player_id} not found")
+    
+    # Update player on the court
+    COURT_PLAYERS[position] = player_id
+    
+    logger.info(f"Updated position {position} with player {player['full_name']}")
+    return {"position": position, "player": player}
 
