@@ -749,3 +749,10 @@ async def delete_file_endpoint(filename: str):
 async def options_file_delete(filename: str):
     return {}
 
+@app.get("/ping")
+async def ping():
+    """
+    Simple ping endpoint for checking server availability
+    """
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
