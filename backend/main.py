@@ -238,6 +238,19 @@ def init_db():
     )
     ''')
     
+    # Create monitored users table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS monitored_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        reason TEXT NOT NULL,
+        action_count INTEGER NOT NULL,
+        first_detected TEXT NOT NULL,
+        last_updated TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1
+    )
+    ''')
+    
     # Initialize court positions if they don't exist
     positions = ["PG", "SG", "SF", "PF", "C"]
     for position in positions:
@@ -777,6 +790,119 @@ ITEMS_PER_PAGE = 10
 # Start the player generator thread
 player_generator = threading.Thread(target=player_generator_thread, daemon=True)
 player_generator.start()
+
+# Define a global variable to hold the security monitor thread
+security_monitor = None
+
+# Constants for security monitoring
+SUSPICIOUS_THRESHOLD_COUNT = 20  # Number of actions in time window to consider suspicious
+SUSPICIOUS_TIME_WINDOW_MINUTES = 5  # Time window to analyze for suspicious activity
+MONITORING_INTERVAL_SECONDS = 60  # How often to run the monitoring thread
+ADMIN_THRESHOLD_MULTIPLIER = 2.0  # Admins have higher threshold (2x normal users)
+
+def analyze_logs_for_suspicious_activity():
+    """Analyze the action logs to detect potentially suspicious activity"""
+    try:
+        logger.info("Analyzing logs for suspicious activity...")
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Calculate time window for analysis
+        time_window = datetime.now() - timedelta(minutes=SUSPICIOUS_TIME_WINDOW_MINUTES)
+        time_window_iso = time_window.isoformat()
+        
+        # Query to count actions per user in the time window
+        cursor.execute("""
+        SELECT username, COUNT(*) as action_count 
+        FROM actions 
+        WHERE timestamp > ? 
+        GROUP BY username
+        """, (time_window_iso,))
+        
+        user_action_counts = cursor.fetchall()
+        
+        # Get user roles
+        cursor.execute("SELECT username, role FROM users")
+        user_roles = {username: role for username, role in cursor.fetchall()}
+        
+        # Check each user against thresholds
+        for username, action_count in user_action_counts:
+            # Different threshold for admins
+            threshold = SUSPICIOUS_THRESHOLD_COUNT
+            if username in user_roles and user_roles[username] == "admin":
+                threshold *= ADMIN_THRESHOLD_MULTIPLIER
+                
+            if action_count > threshold:
+                # Get specific action types to provide more detail
+                cursor.execute("""
+                SELECT action_type, COUNT(*) as type_count 
+                FROM actions 
+                WHERE username = ? AND timestamp > ? 
+                GROUP BY action_type
+                """, (username, time_window_iso))
+                
+                action_types = cursor.fetchall()
+                action_type_summary = ", ".join([f"{count} {action_type}" for action_type, count in action_types])
+                
+                reason = f"Performed {action_count} actions in {SUSPICIOUS_TIME_WINDOW_MINUTES} minutes ({action_type_summary})"
+                
+                # Check if user is already monitored
+                cursor.execute("SELECT id, action_count FROM monitored_users WHERE username = ? AND is_active = 1", (username,))
+                existing = cursor.fetchone()
+                
+                now_iso = datetime.now().isoformat()
+                
+                if existing:
+                    # Update existing monitored user
+                    monitored_id, prev_count = existing
+                    updated_count = prev_count + action_count
+                    cursor.execute("""
+                    UPDATE monitored_users 
+                    SET action_count = ?, reason = ?, last_updated = ?
+                    WHERE id = ?
+                    """, (updated_count, reason, now_iso, monitored_id))
+                    logger.info(f"Updated monitored user {username}: {reason}")
+                else:
+                    # Add new monitored user
+                    cursor.execute("""
+                    INSERT INTO monitored_users (username, reason, action_count, first_detected, last_updated, is_active)
+                    VALUES (?, ?, ?, ?, ?, 1)
+                    """, (username, reason, action_count, now_iso, now_iso))
+                    logger.info(f"Added new monitored user {username}: {reason}")
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error analyzing logs for suspicious activity: {e}")
+
+def security_monitoring_thread():
+    """Thread that periodically checks for suspicious activities"""
+    logger.info("Starting security monitoring thread")
+    
+    while True:
+        try:
+            # Use asyncio to manage the event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            # Analyze logs
+            analyze_logs_for_suspicious_activity()
+            
+            # Wait before the next check
+            time.sleep(MONITORING_INTERVAL_SECONDS)
+        except Exception as e:
+            logger.error(f"Error in security monitoring thread: {str(e)}")
+            time.sleep(MONITORING_INTERVAL_SECONDS)  # Wait before retrying
+
+def start_security_monitor():
+    """Function to start the security monitoring thread"""
+    global security_monitor
+    security_monitor = threading.Thread(target=security_monitoring_thread, daemon=True)
+    security_monitor.start()
+    logger.info("Security monitoring thread started")
+
+# Start the security monitoring thread
+start_security_monitor()
 
 @app.get("/")
 async def root():
@@ -1670,4 +1796,53 @@ async def get_action_log(
     except Exception as e:
         logger.error(f"Error retrieving action log: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error retrieving action log: {str(e)}")
+
+@app.get("/security/monitored-users")
+async def get_monitored_users(current_user: dict = Depends(get_current_user)):
+    """
+    Get a list of monitored users (suspicious activity)
+    Only admin users can access this endpoint
+    """
+    # Check if user has admin role
+    if current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only admin users can view monitored users"
+        )
+        
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        conn.row_factory = sqlite3.Row  # This enables column access by name
+        cursor = conn.cursor()
+        
+        # Get monitored users
+        cursor.execute("""
+        SELECT id, username, reason, action_count, first_detected, last_updated
+        FROM monitored_users
+        WHERE is_active = 1
+        ORDER BY last_updated DESC
+        """)
+        
+        rows = cursor.fetchall()
+        
+        # Convert to list of dictionaries
+        monitored_users = []
+        for row in rows:
+            monitored_users.append({
+                "id": row["id"],
+                "username": row["username"],
+                "reason": row["reason"],
+                "action_count": row["action_count"],
+                "first_detected": row["first_detected"],
+                "last_updated": row["last_updated"]
+            })
+            
+        conn.close()
+        
+        return {
+            "monitored_users": monitored_users
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving monitored users: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving monitored users: {str(e)}")
 
