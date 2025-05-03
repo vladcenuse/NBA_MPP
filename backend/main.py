@@ -43,6 +43,142 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # Initialize OAuth2 password bearer for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+# Authentication models
+class User(BaseModel):
+    username: str
+    role: str
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+    role: Optional[str] = None
+
+# Password hashing and verification
+def get_password_hash(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(plain_password, hashed_password):
+    return get_password_hash(plain_password) == hashed_password
+
+# User database operations
+def create_user(user: UserCreate):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    try:
+        # Check if user already exists
+        cursor.execute("SELECT username FROM users WHERE username = ?", (user.username,))
+        if cursor.fetchone():
+            conn.close()
+            return False
+        
+        # Hash password and save user
+        hashed_password = get_password_hash(user.password)
+        cursor.execute(
+            "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
+            (user.username, hashed_password, user.role, datetime.now().isoformat())
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error creating user: {e}")
+        conn.close()
+        return False
+
+def authenticate_user(username: str, password: str):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT username, password_hash, role FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user:
+        return False
+    
+    username, password_hash, role = user
+    if not verify_password(password, password_hash):
+        return False
+    
+    return {"username": username, "role": role}
+
+# Token creation and validation
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        role: str = payload.get("role")
+        
+        if username is None:
+            raise credentials_exception
+            
+        token_data = TokenData(username=username, role=role)
+    except JWTError:
+        raise credentials_exception
+        
+    return {"username": token_data.username, "role": token_data.role}
+
+# Function to log user actions
+def log_action(username, action_type, entity_type, entity_id=None, details=None):
+    """
+    Log a user action to the actions table
+    
+    Parameters:
+    - username: Username of the user performing the action
+    - action_type: Type of action (CREATE, READ, UPDATE, DELETE)
+    - entity_type: Type of entity being acted upon (player, court_player, etc.)
+    - entity_id: Optional ID of the entity
+    - details: Optional JSON string with additional details
+    """
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        timestamp = datetime.now().isoformat()
+        
+        cursor.execute(
+            """
+            INSERT INTO actions (username, action_type, entity_type, entity_id, details, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (username, action_type, entity_type, entity_id, details, timestamp)
+        )
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error logging action: {e}")
+        # Don't raise the exception so the main functionality continues
+        pass
+
 # Initialize database
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -86,6 +222,19 @@ def init_db():
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL,
         created_at TEXT NOT NULL
+    )
+    ''')
+    
+    # Create actions logging table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        action_type TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT,
+        details TEXT,
+        timestamp TEXT NOT NULL
     )
     ''')
     
@@ -134,51 +283,76 @@ def db_to_player(row):
     return None
 
 # Database operations for players
-def save_player_to_db(player):
+def save_player_to_db(player, username=None):
     """Save or update a player in the database"""
     player_data = player_to_db(player)
     
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     
-    # Check if player exists
-    cursor.execute("SELECT id FROM players WHERE id = ?", (player_data["id"],))
-    exists = cursor.fetchone()
-    
-    if exists:
-        # Update existing player
-        cursor.execute("""
-        UPDATE players 
-        SET full_name = ?, first_name = ?, last_name = ?, is_active = ?,
-            position = ?, ppg = ?, apg = ?, rpg = ?, spg = ?,
-            win_shares = ?, box_plus_minus = ?, eff = ?, data = ?, last_updated = ?
-        WHERE id = ?
-        """, (
-            player_data["full_name"], player_data["first_name"], player_data["last_name"],
-            player_data["is_active"], player_data["position"],
-            player_data["ppg"], player_data["apg"], player_data["rpg"], player_data["spg"],
-            player_data["win_shares"], player_data["box_plus_minus"], player_data["eff"],
-            player_data["data"], player_data["last_updated"], player_data["id"]
-        ))
-        logger.info(f"Updated player in database: {player_data['full_name']}")
-    else:
-        # Insert new player
-        cursor.execute("""
-        INSERT INTO players 
-        (id, full_name, first_name, last_name, is_active, position,
-         ppg, apg, rpg, spg, win_shares, box_plus_minus, eff, data, last_updated)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            player_data["id"], player_data["full_name"], player_data["first_name"], 
-            player_data["last_name"], player_data["is_active"], player_data["position"],
-            player_data["ppg"], player_data["apg"], player_data["rpg"], player_data["spg"],
-            player_data["win_shares"], player_data["box_plus_minus"], player_data["eff"],
-            player_data["data"], player_data["last_updated"]
-        ))
-        logger.info(f"Added new player to database: {player_data['full_name']}")
-    
-    conn.commit()
-    conn.close()
+    try:
+        # Check if player exists
+        cursor.execute("SELECT id FROM players WHERE id = ?", (player_data["id"],))
+        exists = cursor.fetchone()
+        
+        if exists:
+            # Update existing player
+            cursor.execute("""
+            UPDATE players 
+            SET full_name = ?, first_name = ?, last_name = ?, is_active = ?,
+                position = ?, ppg = ?, apg = ?, rpg = ?, spg = ?,
+                win_shares = ?, box_plus_minus = ?, eff = ?, data = ?, last_updated = ?
+            WHERE id = ?
+            """, (
+                player_data["full_name"], player_data["first_name"], player_data["last_name"],
+                player_data["is_active"], player_data["position"],
+                player_data["ppg"], player_data["apg"], player_data["rpg"], player_data["spg"],
+                player_data["win_shares"], player_data["box_plus_minus"], player_data["eff"],
+                player_data["data"], player_data["last_updated"], player_data["id"]
+            ))
+            logger.info(f"Updated player in database: {player_data['full_name']}")
+            
+            # Log the update action
+            if username:
+                log_action(
+                    username=username,
+                    action_type="UPDATE",
+                    entity_type="player",
+                    entity_id=str(player_data["id"]),
+                    details=json.dumps({"name": player_data["full_name"]})
+                )
+        else:
+            # Insert new player
+            cursor.execute("""
+            INSERT INTO players 
+            (id, full_name, first_name, last_name, is_active, position,
+             ppg, apg, rpg, spg, win_shares, box_plus_minus, eff, data, last_updated)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                player_data["id"], player_data["full_name"], player_data["first_name"], 
+                player_data["last_name"], player_data["is_active"], player_data["position"],
+                player_data["ppg"], player_data["apg"], player_data["rpg"], player_data["spg"],
+                player_data["win_shares"], player_data["box_plus_minus"], player_data["eff"],
+                player_data["data"], player_data["last_updated"]
+            ))
+            logger.info(f"Added new player to database: {player_data['full_name']}")
+            
+            # Log the create action
+            if username:
+                log_action(
+                    username=username,
+                    action_type="CREATE",
+                    entity_type="player",
+                    entity_id=str(player_data["id"]),
+                    details=json.dumps({"name": player_data["full_name"]})
+                )
+        
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Error saving player: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
     return player
 
 def get_player_from_db(player_id):
@@ -749,7 +923,7 @@ async def get_court_players():
     return get_court_players_from_db()
 
 @app.post("/court/add")
-async def add_player_to_court(data: CourtPosition):
+async def add_player_to_court(data: CourtPosition, current_user: dict = Depends(get_current_user)):
     """Add a player to a position on the court"""
     position = data.position
     player_id = data.player_id
@@ -765,11 +939,22 @@ async def add_player_to_court(data: CourtPosition):
     # Update player on the court
     add_player_to_court_db(position, player_id)
     
+    # Log the create action
+    username = current_user["username"]
+    player_details = {"name": player.get("full_name", "Unknown"), "id": player.get("id", "Unknown")}
+    log_action(
+        username=username,
+        action_type="CREATE",
+        entity_type="court_player",
+        entity_id=position,
+        details=json.dumps(player_details)
+    )
+    
     logger.info(f"Added player {player['full_name']} to position {position}")
     return {"position": position, "player": player}
 
-@app.delete("/court/{position}")
-async def remove_player_from_court(position: str):
+@app.delete("/court/{position}", response_model=dict)
+async def remove_player_from_court(position: str, current_user: dict = Depends(get_current_user)):
     """Remove a player from a position on the court"""
     if position not in ["PG", "SG", "SF", "PF", "C"]:
         raise HTTPException(status_code=400, detail=f"Invalid position: {position}")
@@ -784,11 +969,22 @@ async def remove_player_from_court(position: str):
     # Remove player from the court
     remove_player_from_court_db(position)
     
+    # Log the delete action
+    username = current_user["username"]
+    player_details = {"name": player.get("full_name", "Unknown"), "id": player.get("id", "Unknown")}
+    log_action(
+        username=username,
+        action_type="DELETE",
+        entity_type="court_player",
+        entity_id=position,
+        details=json.dumps(player_details)
+    )
+    
     logger.info(f"Removed player from position {position}")
     return {"position": position, "player": player}
 
 @app.put("/court/{position}")
-async def update_player_on_court(position: str, data: CourtPosition):
+async def update_player_on_court(position: str, data: CourtPosition, current_user: dict = Depends(get_current_user)):
     """Update/replace a player at a position on the court"""
     if position not in ["PG", "SG", "SF", "PF", "C"]:
         raise HTTPException(status_code=400, detail=f"Invalid position: {position}")
@@ -803,11 +999,22 @@ async def update_player_on_court(position: str, data: CourtPosition):
     # Update player on the court
     add_player_to_court_db(position, player_id)
     
+    # Log the update action
+    username = current_user["username"]
+    player_details = {"name": player.get("full_name", "Unknown"), "id": player.get("id", "Unknown")}
+    log_action(
+        username=username,
+        action_type="UPDATE",
+        entity_type="court_player",
+        entity_id=position,
+        details=json.dumps(player_details)
+    )
+    
     logger.info(f"Updated position {position} with player {player['full_name']}")
     return {"position": position, "player": player}
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...), description: str = Form("")):
+async def upload_file(file: UploadFile = File(...), description: str = Form(""), current_user: dict = Depends(get_current_user)):
     """
     Upload a file to the server with an optional description
     """
@@ -839,6 +1046,22 @@ async def upload_file(file: UploadFile = File(...), description: str = Form(""))
         metadata_path = os.path.join(UPLOAD_DIR, f"{filename}.meta.json")
         with open(metadata_path, "w") as meta_file:
             json.dump(file_info, meta_file)
+            
+        # Log the upload action
+        username = current_user["username"]
+        file_details = {
+            "filename": filename,
+            "original_name": file.filename,
+            "size": file_size,
+            "content_type": file.content_type
+        }
+        log_action(
+            username=username,
+            action_type="CREATE",
+            entity_type="file",
+            entity_id=filename,
+            details=json.dumps(file_details)
+        )
             
         logger.info(f"File uploaded: {filename}, size: {file_size} bytes")
         
@@ -935,7 +1158,7 @@ async def download_file(filename: str):
         raise HTTPException(status_code=500, detail=f"Error downloading file: {str(e)}")
 
 @app.delete("/file-delete/{filename}")
-async def delete_file_endpoint(filename: str):
+async def delete_file_endpoint(filename: str, current_user: dict = Depends(get_current_user)):
     """
     Delete a file from the server
     """
@@ -948,15 +1171,39 @@ async def delete_file_endpoint(filename: str):
         
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get file metadata if available
+        file_metadata = {}
+        metadata_path = os.path.join(UPLOAD_DIR, f"{filename}.meta.json")
+        if os.path.exists(metadata_path):
+            try:
+                with open(metadata_path, "r") as meta_file:
+                    file_metadata = json.load(meta_file)
+            except Exception as e:
+                logger.error(f"Error reading file metadata: {e}")
             
         try:
             # Delete the file
             os.remove(file_path)
             
             # Delete metadata if exists
-            metadata_path = os.path.join(UPLOAD_DIR, f"{filename}.meta.json")
             if os.path.exists(metadata_path):
                 os.remove(metadata_path)
+                
+            # Log the delete action
+            username = current_user["username"]
+            file_details = {
+                "filename": filename,
+                "original_name": file_metadata.get("original_name", filename),
+                "size": file_metadata.get("size", 0)
+            }
+            log_action(
+                username=username,
+                action_type="DELETE",
+                entity_type="file",
+                entity_id=filename,
+                details=json.dumps(file_details)
+            )
                 
             logger.info(f"File deleted: {filename}")
         except PermissionError:
@@ -1258,109 +1505,6 @@ async def advanced_player_stats(
         logger.error(f"Error in advanced player stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Authentication models
-class User(BaseModel):
-    username: str
-    role: str
-
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    role: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    role: str
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-    role: Optional[str] = None
-
-# Password hashing and verification
-def get_password_hash(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def verify_password(plain_password, hashed_password):
-    return get_password_hash(plain_password) == hashed_password
-
-# User database operations
-def create_user(user: UserCreate):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    
-    try:
-        # Check if user already exists
-        cursor.execute("SELECT username FROM users WHERE username = ?", (user.username,))
-        if cursor.fetchone():
-            conn.close()
-            return False
-        
-        # Hash password and save user
-        hashed_password = get_password_hash(user.password)
-        cursor.execute(
-            "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
-            (user.username, hashed_password, user.role, datetime.now().isoformat())
-        )
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        logger.error(f"Error creating user: {e}")
-        conn.close()
-        return False
-
-def authenticate_user(username: str, password: str):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT username, password_hash, role FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-    conn.close()
-    
-    if not user:
-        return False
-    
-    username, password_hash, role = user
-    if not verify_password(password, password_hash):
-        return False
-    
-    return {"username": username, "role": role}
-
-# Token creation and validation
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        role: str = payload.get("role")
-        
-        if username is None:
-            raise credentials_exception
-            
-        token_data = TokenData(username=username, role=role)
-    except JWTError:
-        raise credentials_exception
-        
-    return {"username": token_data.username, "role": token_data.role}
-
 # Authentication endpoints
 @app.post("/register", response_model=Token)
 async def register_user(user: UserCreate):
@@ -1410,4 +1554,120 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
 )
+
+@app.get("/actions/log")
+async def get_action_log(
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of log entries to return"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+    username: Optional[str] = Query(None, description="Filter by username"),
+    action_type: Optional[str] = Query(None, description="Filter by action type (CREATE, READ, UPDATE, DELETE)"),
+    entity_type: Optional[str] = Query(None, description="Filter by entity type (player, court_player, file)"),
+    from_date: Optional[str] = Query(None, description="Filter by date from (ISO format)"),
+    to_date: Optional[str] = Query(None, description="Filter by date to (ISO format)"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get action log history with filtering options.
+    Only admin users can access this endpoint.
+    """
+    # Check if user has admin role
+    if current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only admin users can access the action log"
+        )
+        
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Start building the query
+        query = "SELECT * FROM actions WHERE 1=1"
+        params = []
+        
+        # Apply filters
+        if username:
+            query += " AND username = ?"
+            params.append(username)
+            
+        if action_type:
+            query += " AND action_type = ?"
+            params.append(action_type)
+            
+        if entity_type:
+            query += " AND entity_type = ?"
+            params.append(entity_type)
+            
+        if from_date:
+            query += " AND timestamp >= ?"
+            params.append(from_date)
+            
+        if to_date:
+            query += " AND timestamp <= ?"
+            params.append(to_date)
+            
+        # Add ordering and pagination
+        query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        # Execute query
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        
+        # Get column names
+        column_names = [description[0] for description in cursor.description]
+        
+        # Get total count for pagination
+        count_query = f"SELECT COUNT(*) FROM actions WHERE 1=1"
+        count_params = []
+        
+        if username:
+            count_query += " AND username = ?"
+            count_params.append(username)
+            
+        if action_type:
+            count_query += " AND action_type = ?"
+            count_params.append(action_type)
+            
+        if entity_type:
+            count_query += " AND entity_type = ?"
+            count_params.append(entity_type)
+            
+        if from_date:
+            count_query += " AND timestamp >= ?"
+            count_params.append(from_date)
+            
+        if to_date:
+            count_query += " AND timestamp <= ?"
+            count_params.append(to_date)
+            
+        cursor.execute(count_query, count_params)
+        total_count = cursor.fetchone()[0]
+        
+        # Convert rows to dictionaries
+        results = []
+        for row in rows:
+            result = dict(zip(column_names, row))
+            
+            # Parse details JSON if present
+            if result.get("details"):
+                try:
+                    result["details"] = json.loads(result["details"])
+                except json.JSONDecodeError:
+                    # Keep as string if not valid JSON
+                    pass
+                    
+            results.append(result)
+            
+        conn.close()
+        
+        return {
+            "logs": results,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving action log: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving action log: {str(e)}")
 
