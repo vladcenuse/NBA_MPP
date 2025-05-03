@@ -1099,3 +1099,139 @@ async def reset_database():
         logger.error(f"Error resetting database: {str(e)}")
         return {"error": str(e)}
 
+@app.get("/stats/advanced")
+async def advanced_player_stats(
+    min_ppg: float = Query(0.0, ge=0.0, description="Minimum points per game"),
+    min_win_shares: float = Query(-5.0, ge=-5.0, description="Minimum win shares"),
+    position: str = Query("ALL", description="Filter by position"),
+    sort_by: str = Query("eff", description="Sort by statistical category"),
+    sort_order: str = Query("desc", description="Sort order (asc or desc)"),
+    combine_stats: bool = Query(False, description="Whether to use combined statistical ranking"),
+    include_inactive: bool = Query(False, description="Whether to include inactive players"),
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    limit: int = Query(100, ge=1, le=500, description="Number of players per page")
+):
+    """
+    Advanced statistical query endpoint optimized for performance with large datasets.
+    This endpoint demonstrates various SQL optimization techniques.
+    """
+    try:
+        # Create connection with performance optimizations
+        conn = sqlite3.connect(DB_FILE, timeout=30)
+        conn.execute('PRAGMA journal_mode = WAL')  # Write-Ahead Logging for better concurrency
+        conn.execute('PRAGMA synchronous = NORMAL')  # Reduce synchronous writes
+        conn.execute('PRAGMA cache_size = -64000')  # 64MB cache
+        conn.execute('PRAGMA temp_store = MEMORY')  # Store temp tables in memory
+        cursor = conn.cursor()
+        
+        # Start building the query
+        query_parts = ["SELECT * FROM players WHERE 1=1"]
+        params = []
+        
+        # Apply filters
+        if min_ppg > 0:
+            query_parts.append("AND ppg >= ?")
+            params.append(min_ppg)
+            
+        if min_win_shares > -5:
+            query_parts.append("AND win_shares >= ?")
+            params.append(min_win_shares)
+            
+        if position != "ALL":
+            query_parts.append("AND position = ?")
+            params.append(position)
+            
+        if not include_inactive:
+            query_parts.append("AND is_active = 1")
+        
+        # Determine sort field
+        valid_sort_fields = {
+            "name": "full_name",
+            "ppg": "ppg",
+            "apg": "apg",
+            "rpg": "rpg",
+            "spg": "spg",
+            "win_shares": "win_shares",
+            "box_plus_minus": "box_plus_minus",
+            "eff": "eff"
+        }
+        
+        sort_field = valid_sort_fields.get(sort_by, "eff")
+        
+        # Apply sorting
+        if combine_stats:
+            # Use a complex statistical formula for ranking
+            # This demonstrates a more complex query that can benefit from optimization
+            query_parts.append("""
+                ORDER BY (
+                    CASE WHEN ppg IS NULL THEN 0 ELSE ppg * 1.0 END +
+                    CASE WHEN apg IS NULL THEN 0 ELSE apg * 2.0 END +
+                    CASE WHEN rpg IS NULL THEN 0 ELSE rpg * 1.5 END +
+                    CASE WHEN spg IS NULL THEN 0 ELSE spg * 3.0 END +
+                    CASE WHEN win_shares IS NULL THEN 0 ELSE win_shares * 2.5 END +
+                    CASE WHEN box_plus_minus IS NULL THEN 0 ELSE box_plus_minus * 2.0 END +
+                    CASE WHEN eff IS NULL THEN 0 ELSE eff * 1.8 END
+                ) 
+            """)
+        else:
+            # Standard sorting
+            query_parts.append(f"ORDER BY {sort_field}")
+        
+        # Apply sort direction
+        query_parts.append("DESC" if sort_order.lower() == "desc" else "ASC")
+        
+        # Apply pagination
+        offset = (page - 1) * limit
+        query_parts.append("LIMIT ? OFFSET ?")
+        params.extend([limit, offset])
+        
+        # Construct the final query
+        final_query = " ".join(query_parts)
+        
+        # Add query execution timing
+        start_time = time.time()
+        cursor.execute(final_query, params)
+        rows = cursor.fetchall()
+        query_time = time.time() - start_time
+        
+        # Get the count of total matches (for pagination info)
+        # Extract just the WHERE clause for the count query
+        where_clause = " ".join(query_parts[0:len(query_parts)-3])  # Remove ORDER BY, LIMIT, OFFSET
+        count_query = f"SELECT COUNT(*) FROM ({where_clause})"
+        cursor.execute(count_query, params[:-2])  # Remove limit and offset params
+        total_count = cursor.fetchone()[0]
+        
+        # Convert rows to player objects
+        players = []
+        columns = [column[0] for column in cursor.description]
+        for row in rows:
+            player_dict = dict(zip(columns, row))
+            if 'data' in player_dict and player_dict['data']:
+                try:
+                    # Parse the stored JSON data
+                    player_data = json.loads(player_dict['data'])
+                    players.append(player_data)
+                except json.JSONDecodeError:
+                    # Fallback to raw dictionary if JSON parsing fails
+                    players.append(player_dict)
+            else:
+                players.append(player_dict)
+        
+        conn.close()
+        
+        # Calculate pagination details
+        total_pages = max(1, (total_count + limit - 1) // limit)
+        
+        return {
+            "players": players,
+            "total_players": total_count,
+            "page": page,
+            "total_pages": total_pages,
+            "limit": limit,
+            "query_time_ms": round(query_time * 1000, 2)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in advanced player stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+

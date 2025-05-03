@@ -1,0 +1,241 @@
+2025-05-03 14:02:26,392 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2025-05-03 14:02:26,409 INFO o.a.j.JMeter: Loading user properties from: C:\Jmeter\apache-jmeter-5.6.3\bin\user.properties
+2025-05-03 14:02:26,410 INFO o.a.j.JMeter: Loading system properties from: C:\Jmeter\apache-jmeter-5.6.3\bin\system.properties
+2025-05-03 14:02:26,429 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2025-05-03 14:02:26,429 INFO o.a.j.JMeter: Version 5.6.3
+2025-05-03 14:02:26,430 INFO o.a.j.JMeter: java.version=1.8.0_351
+2025-05-03 14:02:26,430 INFO o.a.j.JMeter: java.vm.name=Java HotSpot(TM) 64-Bit Server VM
+2025-05-03 14:02:26,430 INFO o.a.j.JMeter: os.name=Windows 10
+2025-05-03 14:02:26,430 INFO o.a.j.JMeter: os.arch=amd64
+2025-05-03 14:02:26,431 INFO o.a.j.JMeter: os.version=10.0
+2025-05-03 14:02:26,431 INFO o.a.j.JMeter: file.encoding=Cp1250
+2025-05-03 14:02:26,431 INFO o.a.j.JMeter: java.awt.headless=true
+2025-05-03 14:02:26,432 INFO o.a.j.JMeter: Max memory     =1073741824
+2025-05-03 14:02:26,432 INFO o.a.j.JMeter: Available Processors =8
+2025-05-03 14:02:26,439 INFO o.a.j.JMeter: Default Locale=English (EN)
+2025-05-03 14:02:26,440 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2025-05-03 14:02:26,440 INFO o.a.j.JMeter: JMeterHome=C:\Jmeter\apache-jmeter-5.6.3
+2025-05-03 14:02:26,440 INFO o.a.j.JMeter: user.dir  =C:\Users\User\Desktop\MPP\Project\backend
+2025-05-03 14:02:26,441 INFO o.a.j.JMeter: PWD       =C:\Users\User\Desktop\MPP\Project\backend
+2025-05-03 14:02:26,441 INFO o.a.j.JMeter: IP: 192.168.145.159 Name: Vlad FullName: Vlad
+2025-05-03 14:02:26,466 INFO o.a.j.s.FileServer: Default base='C:\Users\User\Desktop\MPP\Project\backend'
+2025-05-03 14:02:26,468 INFO o.a.j.s.FileServer: Set new base='C:\Users\User\Desktop\MPP\Project\backend'
+2025-05-03 14:02:26,608 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2025-05-03 14:02:26,632 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2025-05-03 14:02:26,639 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2025-05-03 14:02:26,647 INFO o.a.j.s.SaveService: Loading file: jmeter_test_plan.jmx
+2025-05-03 14:02:26,735 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-05-03 14:02:26,735 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-05-03 14:02:26,735 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-05-03 14:02:26,735 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-05-03 14:02:26,735 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2025-05-03 14:02:26,735 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2025-05-03 14:02:27,128 INFO o.a.j.JMeter: Creating summariser <summary>
+2025-05-03 14:02:27,138 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2025-05-03 14:02:27,139 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2025-05-03 14:02:27,139 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2025-05-03 14:02:27,146 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2025-05-03 14:02:27,146 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2025-05-03 14:02:27,706 INFO o.a.j.JMeter: Running test (1746270147706)
+2025-05-03 14:02:27,762 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : API Users
+2025-05-03 14:02:27,762 INFO o.a.j.e.StandardJMeterEngine: Starting 50 threads for group API Users.
+2025-05-03 14:02:27,762 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2025-05-03 14:02:27,762 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=50 ramp-up=5 delayedStart=false
+2025-05-03 14:02:27,792 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-1
+2025-05-03 14:02:27,806 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2025-05-03 14:02:27,806 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2025-05-03 14:02:27,884 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-2
+2025-05-03 14:02:27,990 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-3
+2025-05-03 14:02:28,085 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-4
+2025-05-03 14:02:28,183 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-5
+2025-05-03 14:02:28,288 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-6
+2025-05-03 14:02:28,382 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-7
+2025-05-03 14:02:28,480 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-8
+2025-05-03 14:02:28,518 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = Vlad
+2025-05-03 14:02:28,528 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
+2025-05-03 14:02:28,530 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2025-05-03 14:02:28,530 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to UTF-8
+2025-05-03 14:02:28,531 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2025-05-03 14:02:28,531 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2025-05-03 14:02:28,578 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-9
+2025-05-03 14:02:28,686 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-10
+2025-05-03 14:02:28,784 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-11
+2025-05-03 14:02:28,883 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-12
+2025-05-03 14:02:28,981 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-13
+2025-05-03 14:02:29,076 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-14
+2025-05-03 14:02:29,175 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-15
+2025-05-03 14:02:29,272 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-16
+2025-05-03 14:02:29,371 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-17
+2025-05-03 14:02:29,473 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-18
+2025-05-03 14:02:29,570 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-19
+2025-05-03 14:02:29,670 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-20
+2025-05-03 14:02:29,767 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-21
+2025-05-03 14:02:29,867 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-22
+2025-05-03 14:02:29,967 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-23
+2025-05-03 14:02:30,065 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-24
+2025-05-03 14:02:30,167 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-25
+2025-05-03 14:02:30,266 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-26
+2025-05-03 14:02:30,368 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-27
+2025-05-03 14:02:30,466 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-28
+2025-05-03 14:02:30,566 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-29
+2025-05-03 14:02:30,668 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-30
+2025-05-03 14:02:30,743 INFO o.a.j.r.Summariser: summary +      1 in 00:00:03 =    0.3/s Avg:  2011 Min:  2011 Max:  2011 Err:     0 (0.00%) Active: 30 Started: 30 Finished: 0
+2025-05-03 14:02:30,768 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-31
+2025-05-03 14:02:30,909 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-32
+2025-05-03 14:02:30,978 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-33
+2025-05-03 14:02:31,066 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-34
+2025-05-03 14:02:31,166 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-35
+2025-05-03 14:02:31,265 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-36
+2025-05-03 14:02:31,364 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-37
+2025-05-03 14:02:31,464 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-38
+2025-05-03 14:02:31,565 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-39
+2025-05-03 14:02:31,666 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-40
+2025-05-03 14:02:31,768 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-41
+2025-05-03 14:02:31,867 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-42
+2025-05-03 14:02:31,966 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-43
+2025-05-03 14:02:32,065 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-44
+2025-05-03 14:02:32,165 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-45
+2025-05-03 14:02:32,265 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-46
+2025-05-03 14:02:32,365 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-47
+2025-05-03 14:02:32,465 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-48
+2025-05-03 14:02:32,565 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-49
+2025-05-03 14:02:32,665 INFO o.a.j.t.JMeterThread: Thread started: API Users 1-50
+2025-05-03 14:03:00,424 INFO o.a.j.r.Summariser: summary +     25 in 00:00:30 =    0.8/s Avg: 13962 Min:  3396 Max: 31242 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:03:00,425 INFO o.a.j.r.Summariser: summary =     26 in 00:00:33 =    0.8/s Avg: 13503 Min:  2011 Max: 31242 Err:     0 (0.00%)
+2025-05-03 14:03:30,696 INFO o.a.j.r.Summariser: summary +     25 in 00:00:30 =    0.8/s Avg: 41474 Min: 11293 Max: 61218 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:03:30,697 INFO o.a.j.r.Summariser: summary =     51 in 00:01:03 =    0.8/s Avg: 27214 Min:  2011 Max: 61218 Err:     0 (0.00%)
+2025-05-03 14:04:01,105 INFO o.a.j.r.Summariser: summary +     25 in 00:00:30 =    0.8/s Avg: 66712 Min: 41041 Max: 86251 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:04:01,105 INFO o.a.j.r.Summariser: summary =     76 in 00:01:33 =    0.8/s Avg: 40207 Min:  2011 Max: 86251 Err:     0 (0.00%)
+2025-05-03 14:04:30,340 INFO o.a.j.r.Summariser: summary +     25 in 00:00:29 =    0.9/s Avg: 59747 Min: 42003 Max: 61277 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:04:30,341 INFO o.a.j.r.Summariser: summary =    101 in 00:02:03 =    0.8/s Avg: 45043 Min:  2011 Max: 86251 Err:     0 (0.00%)
+2025-05-03 14:05:00,693 INFO o.a.j.r.Summariser: summary +     27 in 00:00:30 =    0.9/s Avg: 56258 Min: 29403 Max: 78461 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:05:00,693 INFO o.a.j.r.Summariser: summary =    128 in 00:02:33 =    0.8/s Avg: 47409 Min:  2011 Max: 86251 Err:     0 (0.00%)
+2025-05-03 14:05:30,556 INFO o.a.j.r.Summariser: summary +     27 in 00:00:30 =    0.9/s Avg: 57988 Min: 32375 Max: 76381 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:05:30,556 INFO o.a.j.r.Summariser: summary =    155 in 00:03:03 =    0.8/s Avg: 49252 Min:  2011 Max: 86251 Err:     0 (0.00%)
+2025-05-03 14:06:01,346 INFO o.a.j.r.Summariser: summary +     28 in 00:00:31 =    0.9/s Avg: 46471 Min: 28657 Max: 76249 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:06:01,346 INFO o.a.j.r.Summariser: summary =    183 in 00:03:34 =    0.9/s Avg: 48826 Min:  2011 Max: 86251 Err:     0 (0.00%)
+2025-05-03 14:06:30,595 INFO o.a.j.r.Summariser: summary +     27 in 00:00:29 =    0.9/s Avg: 60034 Min: 26313 Max: 104579 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:06:30,595 INFO o.a.j.r.Summariser: summary =    210 in 00:04:03 =    0.9/s Avg: 50267 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:07:00,639 INFO o.a.j.r.Summariser: summary +     29 in 00:00:30 =    1.0/s Avg: 53450 Min: 28261 Max: 86168 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:07:00,639 INFO o.a.j.r.Summariser: summary =    239 in 00:04:33 =    0.9/s Avg: 50653 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:07:30,565 INFO o.a.j.r.Summariser: summary +     27 in 00:00:30 =    0.9/s Avg: 56077 Min: 27528 Max: 89121 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:07:30,565 INFO o.a.j.r.Summariser: summary =    266 in 00:05:03 =    0.9/s Avg: 51204 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:08:00,562 INFO o.a.j.r.Summariser: summary +     28 in 00:00:30 =    0.9/s Avg: 49407 Min: 25911 Max: 80009 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:08:00,562 INFO o.a.j.r.Summariser: summary =    294 in 00:05:33 =    0.9/s Avg: 51033 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:08:31,737 INFO o.a.j.r.Summariser: summary +     28 in 00:00:31 =    0.9/s Avg: 55383 Min: 31281 Max: 84083 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:08:31,737 INFO o.a.j.r.Summariser: summary =    322 in 00:06:04 =    0.9/s Avg: 51411 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:09:01,135 INFO o.a.j.r.Summariser: summary +     28 in 00:00:29 =    1.0/s Avg: 56519 Min: 28089 Max: 100723 Err:     0 (0.00%) Active: 50 Started: 50 Finished: 0
+2025-05-03 14:09:01,135 INFO o.a.j.r.Summariser: summary =    350 in 00:06:33 =    0.9/s Avg: 51820 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:09:03,065 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-9
+2025-05-03 14:09:03,065 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-9
+2025-05-03 14:09:17,516 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-10
+2025-05-03 14:09:17,517 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-10
+2025-05-03 14:09:30,881 INFO o.a.j.r.Summariser: summary +     29 in 00:00:30 =    1.0/s Avg: 56027 Min: 25567 Max: 94388 Err:     0 (0.00%) Active: 48 Started: 50 Finished: 2
+2025-05-03 14:09:30,882 INFO o.a.j.r.Summariser: summary =    379 in 00:07:03 =    0.9/s Avg: 52142 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:09:30,882 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-7
+2025-05-03 14:09:30,882 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-7
+2025-05-03 14:09:53,213 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-8
+2025-05-03 14:09:53,213 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-8
+2025-05-03 14:09:59,984 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-6
+2025-05-03 14:09:59,984 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-6
+2025-05-03 14:10:00,917 INFO o.a.j.r.Summariser: summary +     28 in 00:00:30 =    0.9/s Avg: 48812 Min: 33875 Max: 70124 Err:     0 (0.00%) Active: 45 Started: 50 Finished: 5
+2025-05-03 14:10:00,918 INFO o.a.j.r.Summariser: summary =    407 in 00:07:33 =    0.9/s Avg: 51913 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:10:09,045 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-5
+2025-05-03 14:10:09,045 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-5
+2025-05-03 14:10:12,086 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-3
+2025-05-03 14:10:12,086 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-3
+2025-05-03 14:10:13,924 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-26
+2025-05-03 14:10:13,925 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-26
+2025-05-03 14:10:14,884 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-4
+2025-05-03 14:10:14,884 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-4
+2025-05-03 14:10:20,708 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-2
+2025-05-03 14:10:20,708 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-2
+2025-05-03 14:10:23,598 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-11
+2025-05-03 14:10:23,599 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-11
+2025-05-03 14:10:28,803 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-1
+2025-05-03 14:10:28,803 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-1
+2025-05-03 14:10:30,702 INFO o.a.j.r.Summariser: summary +     28 in 00:00:30 =    0.9/s Avg: 52297 Min: 22592 Max: 77189 Err:     0 (0.00%) Active: 38 Started: 50 Finished: 12
+2025-05-03 14:10:30,702 INFO o.a.j.r.Summariser: summary =    435 in 00:08:03 =    0.9/s Avg: 51937 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:10:32,907 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-17
+2025-05-03 14:10:32,907 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-17
+2025-05-03 14:10:34,067 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-35
+2025-05-03 14:10:34,067 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-35
+2025-05-03 14:10:36,151 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-13
+2025-05-03 14:10:36,151 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-13
+2025-05-03 14:10:39,617 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-33
+2025-05-03 14:10:39,617 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-33
+2025-05-03 14:10:42,755 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-32
+2025-05-03 14:10:42,755 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-32
+2025-05-03 14:10:44,804 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-34
+2025-05-03 14:10:44,804 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-34
+2025-05-03 14:10:47,517 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-27
+2025-05-03 14:10:47,518 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-27
+2025-05-03 14:10:52,335 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-29
+2025-05-03 14:10:52,335 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-29
+2025-05-03 14:10:54,426 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-30
+2025-05-03 14:10:54,426 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-30
+2025-05-03 14:10:55,403 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-15
+2025-05-03 14:10:55,404 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-15
+2025-05-03 14:10:56,436 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-25
+2025-05-03 14:10:56,437 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-25
+2025-05-03 14:10:57,510 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-36
+2025-05-03 14:10:57,510 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-36
+2025-05-03 14:10:58,462 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-19
+2025-05-03 14:10:58,462 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-19
+2025-05-03 14:11:01,417 INFO o.a.j.r.Summariser: summary +     26 in 00:00:31 =    0.8/s Avg: 49641 Min:  7037 Max: 81417 Err:     0 (0.00%) Active: 25 Started: 50 Finished: 25
+2025-05-03 14:11:01,417 INFO o.a.j.r.Summariser: summary =    461 in 00:08:34 =    0.9/s Avg: 51808 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:11:02,382 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-22
+2025-05-03 14:11:02,382 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-22
+2025-05-03 14:11:03,446 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-31
+2025-05-03 14:11:03,446 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-31
+2025-05-03 14:11:05,563 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-48
+2025-05-03 14:11:05,564 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-48
+2025-05-03 14:11:06,621 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-16
+2025-05-03 14:11:06,621 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-16
+2025-05-03 14:11:11,746 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-50
+2025-05-03 14:11:11,746 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-50
+2025-05-03 14:11:14,591 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-14
+2025-05-03 14:11:14,591 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-14
+2025-05-03 14:11:16,854 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-47
+2025-05-03 14:11:16,854 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-47
+2025-05-03 14:11:17,892 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-24
+2025-05-03 14:11:17,892 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-24
+2025-05-03 14:11:21,028 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-21
+2025-05-03 14:11:21,028 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-21
+2025-05-03 14:11:22,899 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-23
+2025-05-03 14:11:22,899 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-23
+2025-05-03 14:11:26,762 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-46
+2025-05-03 14:11:26,762 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-46
+2025-05-03 14:11:27,887 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-28
+2025-05-03 14:11:27,887 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-28
+2025-05-03 14:11:30,847 INFO o.a.j.r.Summariser: summary +     27 in 00:00:29 =    0.9/s Avg: 40381 Min: 19084 Max: 72065 Err:     0 (0.00%) Active: 13 Started: 50 Finished: 37
+2025-05-03 14:11:30,847 INFO o.a.j.r.Summariser: summary =    488 in 00:09:03 =    0.9/s Avg: 51176 Min:  2011 Max: 104579 Err:     0 (0.00%)
+2025-05-03 14:11:30,848 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-44
+2025-05-03 14:11:30,848 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-44
+2025-05-03 14:11:31,771 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-12
+2025-05-03 14:11:31,772 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-12
+2025-05-03 14:11:32,693 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-41
+2025-05-03 14:11:32,693 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-41
+2025-05-03 14:11:33,635 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-49
+2025-05-03 14:11:33,635 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-49
+2025-05-03 14:11:34,570 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-40
+2025-05-03 14:11:34,570 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-40
+2025-05-03 14:11:35,492 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-45
+2025-05-03 14:11:35,493 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-45
+2025-05-03 14:11:37,055 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-37
+2025-05-03 14:11:37,055 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-37
+2025-05-03 14:11:38,700 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-39
+2025-05-03 14:11:38,700 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-39
+2025-05-03 14:11:39,697 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-42
+2025-05-03 14:11:39,697 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-42
+2025-05-03 14:11:40,771 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-20
+2025-05-03 14:11:40,771 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-20
+2025-05-03 14:11:41,702 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-18
+2025-05-03 14:11:41,702 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-18
+2025-05-03 14:11:42,626 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-38
+2025-05-03 14:11:42,626 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-38
+2025-05-03 14:11:44,556 INFO o.a.j.t.JMeterThread: Thread is done: API Users 1-43
+2025-05-03 14:11:44,557 INFO o.a.j.t.JMeterThread: Thread finished: API Users 1-43
+2025-05-03 14:11:44,557 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2025-05-03 14:11:44,561 INFO o.a.j.r.Summariser: summary +     12 in 00:00:14 =    0.9/s Avg: 22558 Min:  5657 Max: 51875 Err:     0 (0.00%) Active: 0 Started: 50 Finished: 50
+2025-05-03 14:11:44,562 INFO o.a.j.r.Summariser: summary =    500 in 00:09:17 =    0.9/s Avg: 50489 Min:  2011 Max: 104579 Err:     0 (0.00%)
