@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Query, HTTPException, Body, WebSocket, WebSocketDisconnect, UploadFile, File, Form, Response
+from fastapi import FastAPI, Query, HTTPException, Body, WebSocket, WebSocketDisconnect, UploadFile, File, Form, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playercareerstats, commonplayerinfo
 from pydantic import BaseModel
@@ -14,8 +15,11 @@ import json
 import os
 import shutil
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+import hashlib
+import secrets
+from jose import JWTError, jwt
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,6 +34,14 @@ logger.info(f"Using database at: {DB_FILE}")
 # Create uploads directory
 UPLOAD_DIR = os.path.join(SCRIPT_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Security constants
+SECRET_KEY = secrets.token_hex(32)
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Initialize OAuth2 password bearer for token authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Initialize database
 def init_db():
@@ -63,6 +75,17 @@ def init_db():
         position TEXT PRIMARY KEY,
         player_id INTEGER,
         FOREIGN KEY (player_id) REFERENCES players (id)
+    )
+    ''')
+    
+    # Create users table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL,
+        created_at TEXT NOT NULL
     )
     ''')
     
@@ -1234,4 +1257,157 @@ async def advanced_player_stats(
     except Exception as e:
         logger.error(f"Error in advanced player stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Authentication models
+class User(BaseModel):
+    username: str
+    role: str
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+    role: Optional[str] = None
+
+# Password hashing and verification
+def get_password_hash(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(plain_password, hashed_password):
+    return get_password_hash(plain_password) == hashed_password
+
+# User database operations
+def create_user(user: UserCreate):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    try:
+        # Check if user already exists
+        cursor.execute("SELECT username FROM users WHERE username = ?", (user.username,))
+        if cursor.fetchone():
+            conn.close()
+            return False
+        
+        # Hash password and save user
+        hashed_password = get_password_hash(user.password)
+        cursor.execute(
+            "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
+            (user.username, hashed_password, user.role, datetime.now().isoformat())
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error creating user: {e}")
+        conn.close()
+        return False
+
+def authenticate_user(username: str, password: str):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT username, password_hash, role FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user:
+        return False
+    
+    username, password_hash, role = user
+    if not verify_password(password, password_hash):
+        return False
+    
+    return {"username": username, "role": role}
+
+# Token creation and validation
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        role: str = payload.get("role")
+        
+        if username is None:
+            raise credentials_exception
+            
+        token_data = TokenData(username=username, role=role)
+    except JWTError:
+        raise credentials_exception
+        
+    return {"username": token_data.username, "role": token_data.role}
+
+# Authentication endpoints
+@app.post("/register", response_model=Token)
+async def register_user(user: UserCreate):
+    if user.role not in ["admin", "user"]:
+        raise HTTPException(status_code=400, detail="Role must be 'admin' or 'user'")
+    
+    if not create_user(user):
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username, "role": user.role},
+        expires_delta=access_token_expires
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer", "role": user.role}
+
+@app.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["username"], "role": user["role"]},
+        expires_delta=access_token_expires
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer", "role": user["role"]}
+
+@app.get("/users/me", response_model=User)
+async def read_users_me(current_user: dict = Depends(get_current_user)):
+    return {"username": current_user["username"], "role": current_user["role"]}
+
+# Middleware to handle CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+)
 
