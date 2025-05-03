@@ -795,21 +795,23 @@ player_generator.start()
 security_monitor = None
 
 # Constants for security monitoring
-SUSPICIOUS_THRESHOLD_COUNT = 20  # Number of actions in time window to consider suspicious
-SUSPICIOUS_TIME_WINDOW_MINUTES = 5  # Time window to analyze for suspicious activity
-MONITORING_INTERVAL_SECONDS = 60  # How often to run the monitoring thread
+SUSPICIOUS_THRESHOLD_COUNT = 10  # Number of actions in time window to consider suspicious (reduced for testing)
+SUSPICIOUS_TIME_WINDOW_MINUTES = 1  # Time window to analyze for suspicious activity (reduced for testing)
+MONITORING_INTERVAL_SECONDS = 5  # How often to run the monitoring thread (reduced for testing)
 ADMIN_THRESHOLD_MULTIPLIER = 2.0  # Admins have higher threshold (2x normal users)
 
 def analyze_logs_for_suspicious_activity():
     """Analyze the action logs to detect potentially suspicious activity"""
     try:
-        logger.info("Analyzing logs for suspicious activity...")
+        logger.info("=== Starting suspicious activity analysis ===")
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         
         # Calculate time window for analysis
         time_window = datetime.now() - timedelta(minutes=SUSPICIOUS_TIME_WINDOW_MINUTES)
         time_window_iso = time_window.isoformat()
+        
+        logger.info(f"Looking for users with > {SUSPICIOUS_THRESHOLD_COUNT} actions in the last {SUSPICIOUS_TIME_WINDOW_MINUTES} minutes")
         
         # Query to count actions per user in the time window
         cursor.execute("""
@@ -821,18 +823,33 @@ def analyze_logs_for_suspicious_activity():
         
         user_action_counts = cursor.fetchall()
         
+        if not user_action_counts:
+            logger.info("No recent user actions found in the time window")
+            conn.close()
+            return
+            
+        logger.info(f"Found {len(user_action_counts)} users with recent activity:")
+        for username, count in user_action_counts:
+            logger.info(f"  - {username}: {count} actions")
+        
         # Get user roles
         cursor.execute("SELECT username, role FROM users")
         user_roles = {username: role for username, role in cursor.fetchall()}
         
         # Check each user against thresholds
+        suspicious_users_found = False
+        
         for username, action_count in user_action_counts:
             # Different threshold for admins
             threshold = SUSPICIOUS_THRESHOLD_COUNT
             if username in user_roles and user_roles[username] == "admin":
                 threshold *= ADMIN_THRESHOLD_MULTIPLIER
+                logger.info(f"User {username} is an admin, threshold is {threshold}")
                 
             if action_count > threshold:
+                suspicious_users_found = True
+                logger.info(f"⚠️ Suspicious activity detected for user {username}: {action_count} actions > threshold {threshold}")
+                
                 # Get specific action types to provide more detail
                 cursor.execute("""
                 SELECT action_type, COUNT(*) as type_count 
@@ -861,19 +878,26 @@ def analyze_logs_for_suspicious_activity():
                     SET action_count = ?, reason = ?, last_updated = ?
                     WHERE id = ?
                     """, (updated_count, reason, now_iso, monitored_id))
-                    logger.info(f"Updated monitored user {username}: {reason}")
+                    logger.info(f"📝 Updated monitored user {username}: {reason}")
                 else:
                     # Add new monitored user
                     cursor.execute("""
                     INSERT INTO monitored_users (username, reason, action_count, first_detected, last_updated, is_active)
                     VALUES (?, ?, ?, ?, ?, 1)
                     """, (username, reason, action_count, now_iso, now_iso))
-                    logger.info(f"Added new monitored user {username}: {reason}")
+                    logger.info(f"🚨 Added new monitored user {username}: {reason}")
+            else:
+                logger.info(f"User {username} activity ({action_count}) is below threshold ({threshold})")
         
+        if not suspicious_users_found:
+            logger.info("No suspicious activity detected")
+            
         conn.commit()
         conn.close()
+        logger.info("=== Completed suspicious activity analysis ===")
     except Exception as e:
         logger.error(f"Error analyzing logs for suspicious activity: {e}")
+        logger.exception(e)
 
 def security_monitoring_thread():
     """Thread that periodically checks for suspicious activities"""
