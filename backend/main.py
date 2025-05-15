@@ -36,7 +36,8 @@ UPLOAD_DIR = os.path.join(SCRIPT_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Security constants
-SECRET_KEY = secrets.token_hex(32)
+# Use environment variable for SECRET_KEY if available, otherwise generate a new one
+SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -1044,7 +1045,8 @@ async def get_player_stats_endpoint(player_id: int):
             return player
     raise HTTPException(status_code=404, detail="Player not found")
 
-#Backend: Run uvicorn backend.main:app --reload
+# Local dev: Run uvicorn backend.main:app --reload (from project root)
+# Deployment: gunicorn main:app -k uvicorn.workers.UvicornWorker (from backend directory)
 #Frontend: npm run serve
 
 @app.get("/test")

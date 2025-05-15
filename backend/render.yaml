@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nba-stats-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app -k uvicorn.workers.UvicornWorker --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1 

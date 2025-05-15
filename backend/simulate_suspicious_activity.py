@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Configuration
 BASE_URL = "http://127.0.0.1:8000"
-USERNAME = "suspicious_user1"
+USERNAME = "suspicious_user2"
 PASSWORD = "password123"
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
