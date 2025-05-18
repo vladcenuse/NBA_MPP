@@ -1,0 +1,31 @@
+{
+    "family": "nba-mpp",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "containerDefinitions": [
+        {
+            "name": "backend",
+            "image": "vladcenuse/nba-mpp-backend:latest",
+            "portMappings": [
+                {
+                    "containerPort": 8000,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true
+        },
+        {
+            "name": "frontend",
+            "image": "vladcenuse/nba-mpp-frontend:latest",
+            "portMappings": [
+                {
+                    "containerPort": 80,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true
+        }
+    ]
+} 

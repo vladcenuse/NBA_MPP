@@ -63,6 +63,55 @@ class TokenData(BaseModel):
     username: Optional[str] = None
     role: Optional[str] = None
 
+# 2FA Models and Storage
+class TwoFactorRequest(BaseModel):
+    username: str
+
+class TwoFactorVerify(BaseModel):
+    username: str
+    code: str
+
+# In-memory storage for 2FA codes (replace with database in production)
+two_factor_codes = {}
+
+def generate_2fa_code():
+    """Generate a 6-digit 2FA code"""
+    return ''.join(random.choices('0123456789', k=6))
+
+def store_2fa_code(username: str, code: str):
+    """Store 2FA code with expiration"""
+    two_factor_codes[username] = {
+        'code': code,
+        'expires_at': datetime.utcnow() + timedelta(minutes=10),
+        'attempts': 0
+    }
+
+def verify_2fa_code(username: str, code: str) -> bool:
+    """Verify 2FA code"""
+    if username not in two_factor_codes:
+        return False
+    
+    stored = two_factor_codes[username]
+    
+    # Check expiration
+    if datetime.utcnow() > stored['expires_at']:
+        del two_factor_codes[username]
+        return False
+    
+    # Check attempts
+    if stored['attempts'] >= 3:
+        del two_factor_codes[username]
+        return False
+    
+    # Verify code
+    if stored['code'] != code:
+        stored['attempts'] += 1
+        return False
+    
+    # Code verified, clean up
+    del two_factor_codes[username]
+    return True
+
 # Password hashing and verification
 def get_password_hash(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -766,9 +815,9 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://51.21.190.192", "http://localhost:8080"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -1698,15 +1747,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def read_users_me(current_user: dict = Depends(get_current_user)):
     return {"username": current_user["username"], "role": current_user["role"]}
 
-# Middleware to handle CORS for frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
-)
-
 @app.get("/actions/log")
 async def get_action_log(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of log entries to return"),
@@ -1871,4 +1911,64 @@ async def get_monitored_users(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Error retrieving monitored users: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error retrieving monitored users: {str(e)}")
+
+# 2FA Endpoints
+@app.post("/auth/2fa/request")
+async def request_2fa_code(request: TwoFactorRequest):
+    """Request a new 2FA code"""
+    # In a real implementation, you would:
+    # 1. Verify the user exists
+    # 2. Check if 2FA is enabled for the user
+    # 3. Send the code via email
+    
+    code = generate_2fa_code()
+    store_2fa_code(request.username, code)
+    
+    # For development/testing, return the code
+    # In production, send via email and return success message
+    return {"message": "2FA code sent", "code": code}  # Remove code in production!
+
+@app.post("/auth/2fa/verify")
+async def verify_2fa_code_endpoint(verify: TwoFactorVerify):
+    """Verify 2FA code and complete login"""
+    if not verify_2fa_code(verify.username, verify.code):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired 2FA code"
+        )
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Get user role (in production, fetch from database)
+    role = "user"  # Placeholder
+    
+    access_token = create_access_token(
+        data={"sub": verify.username, "role": role},
+        expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "role": role
+    }
+
+@app.post("/auth/2fa/enable")
+async def enable_2fa(current_user: dict = Depends(get_current_user)):
+    """Enable 2FA for user"""
+    # In a real implementation, you would:
+    # 1. Update user's 2FA status in database
+    # 2. Possibly generate and return TOTP secret
+    
+    return {"message": "2FA enabled successfully"}
+
+@app.post("/auth/2fa/disable")
+async def disable_2fa(current_user: dict = Depends(get_current_user)):
+    """Disable 2FA for user"""
+    # In a real implementation, you would:
+    # 1. Update user's 2FA status in database
+    # 2. Clean up any 2FA-related data
+    
+    return {"message": "2FA disabled successfully"}
 
